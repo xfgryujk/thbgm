@@ -6,6 +6,9 @@
 
 namespace thbgm
 {
+	bool Init(HWND hwnd = NULL);
+	bool Uninit();
+
 	struct Bgm
 	{
 		std::wstring fileName;         // File name in FMT file or BGM directory (TH06)
@@ -18,7 +21,7 @@ namespace thbgm
 		std::wstring newFileName;      // The file to replace with
 		DWORD newOffset;               // Automatically calculated by Save()
 		DWORD newLoopPoint;			   // Set by user
-		DWORD newEndPoint;			   // Automatically calculated by Save()
+		DWORD newEndPoint;			   // Automatically calculated by Save()->WritePcm()
 	};
 
 	class THBgm

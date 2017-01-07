@@ -31,6 +31,7 @@ protected:
 	afx_msg HCURSOR OnQueryDragIcon();
 	DECLARE_MESSAGE_MAP()
 public:
+	afx_msg void OnDestroy();
 	afx_msg void OnEnChangeEdit1();
 	afx_msg void OnBnClickedButton1();
 	afx_msg void OnBnClickedButton2();
@@ -39,6 +40,7 @@ public:
 	afx_msg void OnLbnSelchangeList1();
 	afx_msg void OnBnClickedButton4();
 	afx_msg void OnBnClickedCheck1();
+	afx_msg void OnBnClickedButton6();
 
 protected:
 	void BrowseFile(CEdit& edit, LPCTSTR defaultExtension, LPCTSTR filter);
@@ -59,6 +61,4 @@ protected:
 	std::unique_ptr<thbgm::THBgm> m_thbgm;
 
 	int m_lastSel = LB_ERR;
-public:
-	afx_msg void OnBnClickedButton6();
 };

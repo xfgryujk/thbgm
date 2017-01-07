@@ -48,6 +48,7 @@ BEGIN_MESSAGE_MAP(CThbgmDlg, CDialog)
 	ON_BN_CLICKED(IDC_BUTTON4, &CThbgmDlg::OnBnClickedButton4)
 	ON_BN_CLICKED(IDC_CHECK1, &CThbgmDlg::OnBnClickedCheck1)
 	ON_BN_CLICKED(IDC_BUTTON6, &CThbgmDlg::OnBnClickedButton6)
+	ON_WM_DESTROY()
 END_MESSAGE_MAP()
 
 
@@ -99,9 +100,21 @@ BOOL CThbgmDlg::OnInitDialog()
 	SetIcon(m_hIcon, TRUE);			// 设置大图标
 	SetIcon(m_hIcon, FALSE);		// 设置小图标
 
+	if (!thbgm::Init(GetSafeHwnd()))
+	{
+		AfxMessageBox(_T("Failed to init bass"), MB_ICONERROR);
+		return FALSE;
+	}
+
 	return TRUE;  // 除非将焦点设置到控件，否则返回 TRUE
 }
 
+void CThbgmDlg::OnDestroy()
+{
+	CDialog::OnDestroy();
+
+	Uninit();
+}
 
 
 void CThbgmDlg::OnEnChangeEdit1()
@@ -245,7 +258,7 @@ void CThbgmDlg::OnBnClickedButton6()
 	EnableWindow(FALSE);
 	std::thread([this, outputDir]{
 		if (m_thbgm->Save(outputDir))
-			MessageBox(_T("Succeeded!"), NULL, MB_ICONERROR);
+			MessageBox(_T("Succeeded!"));
 		else
 			MessageBox(_T("Failed to save!"), NULL, MB_ICONERROR);
 		EnableWindow(TRUE);

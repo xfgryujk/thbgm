@@ -4,6 +4,8 @@
 #include <map>
 #include <fstream>
 #include <regex>
+#include <bass.h>
+#include <bassmix.h>
 using namespace std;
 
 
@@ -79,6 +81,47 @@ namespace thbgm
 				}
 			}
 		}
+
+
+		bool WritePcm(Bgm& bgm, ofstream& output, DWORD frequency = 44100, DWORD channels = 2)
+		{
+			HSTREAM mixedStream = BASS_Mixer_StreamCreate(frequency, channels, BASS_STREAM_DECODE | BASS_MIXER_END);
+			if (mixedStream == NULL) return false;
+			HSTREAM srcStream = BASS_StreamCreateFile(FALSE, WstringToString(bgm.newFileName).c_str(), 0, 0, BASS_STREAM_DECODE);
+			if (srcStream == NULL) { BASS_StreamFree(mixedStream); return false; }
+
+			bool res = true;
+			auto buffer = make_unique<BYTE[]>(10240);
+
+			// Resampling
+			if (!BASS_Mixer_StreamAddChannel(mixedStream, srcStream, BASS_MIXER_BUFFER)) { res = false; goto End; }
+			bgm.newEndPoint = 0;
+			while (BASS_ChannelIsActive(mixedStream) != BASS_ACTIVE_STOPPED)
+			{
+				DWORD size = BASS_ChannelGetData(mixedStream, buffer.get(), 10240);
+				if (size == -1) { res = false; goto End; }
+				output.write((char*)buffer.get(), size);
+				bgm.newEndPoint += size;
+			}
+
+		End:
+			BASS_StreamFree(srcStream);
+			BASS_StreamFree(mixedStream);
+			return res;
+		}
+	}
+
+
+	bool Init(HWND hwnd)
+	{
+		/*if (HIWORD(BASS_GetVersion()) != BASSVERSION)
+			return false;*/
+		return BASS_Init(0, 44100, 0, hwnd, NULL) != FALSE;
+	}
+
+	bool Uninit()
+	{
+		return BASS_Free() != FALSE;
 	}
 
 
@@ -155,6 +198,60 @@ namespace thbgm
 
 	bool THPosBgm::Save(const std::wstring& outputDir)
 	{
+		Bgm& bgm = m_bgms[0];
+
+		bgm.newOffset = 44;
+
+		// Write BGM
+		if (bgm.newFileName.empty())
+		{
+			if (!CopyFileW(m_bgmFile.c_str(), (outputDir + L"\\" + m_bgms[0].fileName).c_str(), FALSE))
+				return false;
+
+			bgm.newEndPoint = bgm.originalEndPoint;
+		}
+		else
+		{
+			ofstream newBgmStream(outputDir + L"\\" + m_bgms[0].fileName, ios_base::binary);
+			if (!newBgmStream.is_open())
+				return false;
+
+			// Write WAV header
+			newBgmStream.write("RIFF\0\0\0\0WAVEfmt \20\0\0\0", 20);
+			WAVEFORMATEX wf;
+			wf.wFormatTag = 1;
+			wf.nChannels = 2;
+			wf.wBitsPerSample = 16;
+			wf.nBlockAlign = wf.nChannels * wf.wBitsPerSample / 8;
+			wf.nSamplesPerSec = 44100;
+			wf.nAvgBytesPerSec = wf.nSamplesPerSec * wf.nBlockAlign;
+			newBgmStream.write((char*)&wf, 16);
+			newBgmStream.write("data\0\0\0\0", 8);
+
+			// Write data
+			if (!WritePcm(bgm, newBgmStream))
+				return false;
+
+			// Complete WAV header
+			DWORD buffer;
+			newBgmStream.seekp(4, ios::beg);
+			buffer = bgm.newOffset + bgm.newEndPoint - 4;
+			newBgmStream.write((char*)&buffer, 4);
+			newBgmStream.seekp(40, ios::beg);
+			buffer = bgm.newEndPoint;
+			newBgmStream.write((char*)&buffer, 4);
+		}
+		
+		// Write FMT
+		DWORD fmtBuffer[2] = {
+			(bgm.newLoopPoint + bgm.newOffset) / 4,
+			(bgm.newEndPoint + bgm.newOffset) / 4
+		};
+		ofstream newFmtStream(outputDir + L"\\" + m_bgms[0].pureFileName + L".pos", ios_base::binary);
+		if (!newFmtStream.is_open())
+			return false;
+		newFmtStream.write((char*)fmtBuffer, sizeof(fmtBuffer));
+
 		return true;
 	}
 
