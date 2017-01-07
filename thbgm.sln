@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 2013
+VisualStudioVersion = 12.0.21005.1
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libthbgm", "libthbgm\libthbgm.vcxproj", "{EA70950F-F71F-41DF-91F6-6C5B2A6922C3}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "thbgm", "thbgm\thbgm.vcxproj", "{031B667C-919A-4426-A99B-DD6C6963F95D}"
+	ProjectSection(ProjectDependencies) = postProject
+		{EA70950F-F71F-41DF-91F6-6C5B2A6922C3} = {EA70950F-F71F-41DF-91F6-6C5B2A6922C3}
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Win32 = Debug|Win32
+		Release|Win32 = Release|Win32
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{EA70950F-F71F-41DF-91F6-6C5B2A6922C3}.Debug|Win32.ActiveCfg = Debug|Win32
+		{EA70950F-F71F-41DF-91F6-6C5B2A6922C3}.Debug|Win32.Build.0 = Debug|Win32
+		{EA70950F-F71F-41DF-91F6-6C5B2A6922C3}.Release|Win32.ActiveCfg = Release|Win32
+		{EA70950F-F71F-41DF-91F6-6C5B2A6922C3}.Release|Win32.Build.0 = Release|Win32
+		{031B667C-919A-4426-A99B-DD6C6963F95D}.Debug|Win32.ActiveCfg = Debug|Win32
+		{031B667C-919A-4426-A99B-DD6C6963F95D}.Debug|Win32.Build.0 = Debug|Win32
+		{031B667C-919A-4426-A99B-DD6C6963F95D}.Release|Win32.ActiveCfg = Release|Win32
+		{031B667C-919A-4426-A99B-DD6C6963F95D}.Release|Win32.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
