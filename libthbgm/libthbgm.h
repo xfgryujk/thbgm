@@ -76,5 +76,8 @@ namespace thbgm
 			DWORD zero;
 		};
 		static_assert(sizeof(FmtStruct) == 52, "Wrong size!");
+
+		std::unique_ptr<BYTE[]> m_fmtBuffer;
+		size_t m_fmtSize;
 	};
 }

@@ -98,7 +98,7 @@ namespace thbgm
 			bgm.newEndPoint = 0;
 			while (BASS_ChannelIsActive(mixedStream) != BASS_ACTIVE_STOPPED)
 			{
-				DWORD size = BASS_Mixer_ChannelGetData(mixedStream, buffer.get(), 10240);
+				DWORD size = BASS_ChannelGetData(mixedStream, buffer.get(), 10240);
 				if (size == -1) { res = false; goto End; }
 				output.write((char*)buffer.get(), size);
 				bgm.newEndPoint += size;
@@ -108,6 +108,19 @@ namespace thbgm
 			BASS_StreamFree(srcStream);
 			BASS_StreamFree(mixedStream);
 			return res;
+		}
+
+		void CopyStream(istream& input, ostream& output, size_t size)
+		{
+			auto buffer = make_unique<BYTE[]>(10240);
+			while (size > 10240)
+			{
+				input.read((char*)buffer.get(), 10240);
+				output.write((char*)buffer.get(), 10240);
+				size -= 10240;
+			}
+			input.read((char*)buffer.get(), size);
+			output.write((char*)buffer.get(), size);
 		}
 	}
 
@@ -178,11 +191,6 @@ namespace thbgm
 		// BGM information
 		DWORD fmtBuffer[2];
 		fmtStream.read((char*)fmtBuffer, sizeof(fmtBuffer));
-		if (fmtStream.gcount() != sizeof(fmtBuffer))
-		{
-			m_bgms.clear();
-			return false;
-		}
 		bgm.originalOffset = 44;
 		bgm.originalLoopPoint = fmtBuffer[0] * 4 - bgm.originalOffset;
 		bgm.originalEndPoint = fmtBuffer[1] * 4 - bgm.originalOffset;
@@ -276,12 +284,12 @@ namespace thbgm
 			return false;
 
 		filebuf* pbuf = fmtStream.rdbuf();
-		size_t fmtSize = (size_t)pbuf->pubseekoff(0, fmtStream.end, fmtStream.in);
+		m_fmtSize = (size_t)pbuf->pubseekoff(0, fmtStream.end, fmtStream.in);
 		pbuf->pubseekpos(0, fmtStream.in);
-		auto fmtBuffer = make_unique<BYTE[]>(fmtSize);
-		pbuf->sgetn((char*)fmtBuffer.get(), fmtSize);
+		m_fmtBuffer = make_unique<BYTE[]>(m_fmtSize);
+		pbuf->sgetn((char*)m_fmtBuffer.get(), m_fmtSize);
 
-		for (FmtStruct* pFmt = (FmtStruct*)fmtBuffer.get(); (BYTE*)pFmt + sizeof(FmtStruct) <= fmtBuffer.get() + fmtSize; pFmt++)
+		for (FmtStruct* pFmt = (FmtStruct*)m_fmtBuffer.get(); (BYTE*)pFmt + sizeof(FmtStruct) <= m_fmtBuffer.get() + m_fmtSize; ++pFmt)
 		{
 			m_bgms.resize(m_bgms.size() + 1);
 			Bgm& bgm = m_bgms[m_bgms.size() - 1];
@@ -313,6 +321,49 @@ namespace thbgm
 
 	bool THFmtBgm::Save(const wstring& outputDir)
 	{
+		// Write BGM
+		ifstream originalBgmStream(m_bgmFile.c_str(), ios_base::binary);
+		ofstream newBgmStream(outputDir + L"\\thbgm.dat", ios_base::binary);
+		if (!newBgmStream.is_open() || !newBgmStream.is_open())
+			return false;
+
+		CopyStream(originalBgmStream, newBgmStream, 16);
+		DWORD offset = 16;
+
+		for (auto& i : m_bgms)
+		{
+			i.newOffset = offset;
+			if (i.newFileName.empty())
+			{
+				originalBgmStream.seekg(i.originalOffset, ios::beg);
+				i.newEndPoint = i.originalEndPoint;
+				CopyStream(originalBgmStream, newBgmStream, i.newEndPoint);
+			}
+			else
+			{
+				if (!WritePcm(i, newBgmStream))
+					return false;
+			}
+			offset += i.newEndPoint;
+		}
+
+		// Write FMT
+		ofstream newFmtStream(outputDir + L"\\thbgm.fmt", ios_base::binary);
+		if (!newFmtStream.is_open())
+			return false;
+
+		FmtStruct* pFmt = (FmtStruct*)m_fmtBuffer.get();
+		for (const auto& i : m_bgms)
+		{
+			pFmt->offset = i.newOffset;
+			pFmt->loopPoint = i.newLoopPoint - i.newLoopPoint % 4; // Make sure it is divisible by 4
+			pFmt->endPoint = i.newEndPoint;
+
+			++pFmt;
+		}
+
+		newFmtStream.write((char*)m_fmtBuffer.get(), m_fmtSize);
+
 		return true;
 	}
 }
