@@ -98,7 +98,7 @@ namespace thbgm
 			bgm.newEndPoint = 0;
 			while (BASS_ChannelIsActive(mixedStream) != BASS_ACTIVE_STOPPED)
 			{
-				DWORD size = BASS_ChannelGetData(mixedStream, buffer.get(), 10240);
+				DWORD size = BASS_Mixer_ChannelGetData(mixedStream, buffer.get(), 10240);
 				if (size == -1) { res = false; goto End; }
 				output.write((char*)buffer.get(), size);
 				bgm.newEndPoint += size;
@@ -196,7 +196,7 @@ namespace thbgm
 		return true;
 	}
 
-	bool THPosBgm::Save(const std::wstring& outputDir)
+	bool THPosBgm::Save(const wstring& outputDir)
 	{
 		Bgm& bgm = m_bgms[0];
 
@@ -258,17 +258,60 @@ namespace thbgm
 
 	// THFmtBgm
 
-	THFmtBgm::THFmtBgm(const std::wstring& fmtFile, const std::wstring& bgmFile, const std::wstring& cmtFile)
+	THFmtBgm::THFmtBgm(const wstring& fmtFile, const wstring& bgmFile, const wstring& cmtFile)
 	{
 		Load(fmtFile, bgmFile, cmtFile);
 	}
 
-	bool THFmtBgm::Load(const std::wstring& fmtFile, const std::wstring& bgmFile, const std::wstring& cmtFile)
+	bool THFmtBgm::Load(const wstring& fmtFile, const wstring& bgmFile, const wstring& cmtFile)
 	{
+		m_fmtFile = fmtFile;
+		m_bgmFile = bgmFile;
+		m_bgms.clear();
+
+		if (!PathFileExistsW(fmtFile.c_str()) || !PathFileExistsW(bgmFile.c_str()))
+			return false;
+		ifstream fmtStream(fmtFile, ios_base::binary);
+		if (!fmtStream.is_open())
+			return false;
+
+		filebuf* pbuf = fmtStream.rdbuf();
+		size_t fmtSize = (size_t)pbuf->pubseekoff(0, fmtStream.end, fmtStream.in);
+		pbuf->pubseekpos(0, fmtStream.in);
+		auto fmtBuffer = make_unique<BYTE[]>(fmtSize);
+		pbuf->sgetn((char*)fmtBuffer.get(), fmtSize);
+
+		for (FmtStruct* pFmt = (FmtStruct*)fmtBuffer.get(); (BYTE*)pFmt + sizeof(FmtStruct) <= fmtBuffer.get() + fmtSize; pFmt++)
+		{
+			m_bgms.resize(m_bgms.size() + 1);
+			Bgm& bgm = m_bgms[m_bgms.size() - 1];
+
+			// fileName
+			bgm.fileName = StringToWstring(pFmt->fileName);
+
+			// pureFileName
+			size_t pos = bgm.fileName.rfind(L'.');
+			if (pos != wstring::npos)
+				bgm.pureFileName = bgm.fileName.substr(0, pos);
+			else
+				bgm.pureFileName = bgm.fileName;
+
+			// BGM information
+			bgm.originalOffset = pFmt->offset;
+			bgm.originalLoopPoint = pFmt->loopPoint;
+			bgm.originalEndPoint = pFmt->endPoint;
+			bgm.newOffset = bgm.originalOffset;
+			bgm.newLoopPoint = bgm.originalLoopPoint;
+			bgm.newEndPoint = bgm.originalEndPoint;
+		}
+
+		// displayName
+		GetDisplayNames(m_bgms, cmtFile);
+
 		return true;
 	}
 
-	bool THFmtBgm::Save(const std::wstring& outputDir)
+	bool THFmtBgm::Save(const wstring& outputDir)
 	{
 		return true;
 	}

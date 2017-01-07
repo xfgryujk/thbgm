@@ -60,5 +60,21 @@ namespace thbgm
 
 		virtual bool Load(const std::wstring& fmtFile, const std::wstring& bgmFile, const std::wstring& cmtFile);
 		virtual bool Save(const std::wstring& outputDir);
+
+	protected:
+		struct FmtStruct
+		{
+			char fileName[16];
+			DWORD offset;
+			DWORD unknown1;
+			DWORD loopPoint;
+			DWORD endPoint;
+			DWORD unknown2;
+			DWORD frequency;
+			DWORD bytesPerSec;
+			DWORD unknown3;
+			DWORD zero;
+		};
+		static_assert(sizeof(FmtStruct) == 52, "Wrong size!");
 	};
 }
