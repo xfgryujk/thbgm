@@ -102,7 +102,7 @@ BOOL CThbgmDlg::OnInitDialog()
 
 	if (!thbgm::Init(GetSafeHwnd()))
 	{
-		AfxMessageBox(_T("Failed to init bass"), MB_ICONERROR);
+		AfxMessageBox(IDS_FAILED_TO_INIT_BASS, MB_ICONERROR);
 		return FALSE;
 	}
 
@@ -166,7 +166,7 @@ void CThbgmDlg::OnBnClickedButton3()
 	if (m_thbgm == nullptr || m_thbgm->m_bgms.empty())
 	{
 		m_thbgm = nullptr;
-		MessageBox(_T("Failed to parse!"), NULL, MB_ICONERROR);
+		AfxMessageBox(IDS_FAILED_TO_PARSE, MB_ICONERROR);
 		return;
 	}
 
@@ -258,9 +258,9 @@ void CThbgmDlg::OnBnClickedButton6()
 	EnableWindow(FALSE);
 	std::thread([this, outputDir]{
 		if (m_thbgm->Save(outputDir))
-			MessageBox(_T("Succeeded!"));
+			AfxMessageBox(IDS_SUCCEEDED);
 		else
-			MessageBox(_T("Failed to save!"), NULL, MB_ICONERROR);
+			AfxMessageBox(IDS_FAILED_TO_SAVE, MB_ICONERROR);
 		EnableWindow(TRUE);
 	}).detach();
 }
