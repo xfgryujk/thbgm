@@ -113,7 +113,7 @@ void CThbgmDlg::OnDestroy()
 {
 	CDialog::OnDestroy();
 
-	Uninit();
+	thbgm::Uninit();
 }
 
 
@@ -187,7 +187,7 @@ void CThbgmDlg::OnLbnSelchangeList1()
 		ShowBgm(m_thbgm->m_bgms[m_lastSel]);
 }
 
-void CThbgmDlg::ShowBgm(const thbgm::Bgm& bgm)
+void CThbgmDlg::ShowBgm(const Bgm& bgm)
 {
 	CString buffer;
 
@@ -252,7 +252,7 @@ void CThbgmDlg::OnBnClickedButton6()
 		return;
 
 	std::wstring outputDir(MAX_PATH, L'\0');
-	SHGetPathFromIDListW(pidlSel, (LPWSTR)outputDir.c_str());
+	SHGetPathFromIDListW(pidlSel, &outputDir.front());
 	outputDir.resize(wcslen(outputDir.c_str()));
 
 	EnableWindow(FALSE);

@@ -19,7 +19,7 @@ namespace thbgm
 			if (dstLen == 0)
 				return L"";
 			wstring res((size_t)dstLen, L'\0');
-			MultiByteToWideChar(codePage, 0, src.c_str(), src.size(), (LPWSTR)res.c_str(), dstLen);
+			MultiByteToWideChar(codePage, 0, src.c_str(), src.size(), &res.front(), dstLen);
 			res.resize(dstLen);
 			return res;
 		}
@@ -30,7 +30,7 @@ namespace thbgm
 			if (dstLen == 0)
 				return "";
 			string res((size_t)dstLen, '\0');
-			WideCharToMultiByte(codePage, 0, src.c_str(), src.size(), (LPSTR)res.c_str(), dstLen, NULL, NULL);
+			WideCharToMultiByte(codePage, 0, src.c_str(), src.size(), &res.front(), dstLen, NULL, NULL);
 			res.resize(dstLen);
 			return res;
 		}
@@ -66,7 +66,7 @@ namespace thbgm
 				size_t size = (size_t)pbuf->pubseekoff(0, cmtStream.end, cmtStream.in);
 				pbuf->pubseekpos(0, cmtStream.in);
 				string cmtBuffer(size, '\0');
-				pbuf->sgetn((char*)cmtBuffer.c_str(), size);
+				pbuf->sgetn(&cmtBuffer.front(), size);
 
 				UINT cmtCodePage = GuessCmtCodePage(cmtBuffer);
 
@@ -358,6 +358,9 @@ namespace thbgm
 			pFmt->offset = i.newOffset;
 			pFmt->loopPoint = i.newLoopPoint - i.newLoopPoint % 4; // Make sure it is divisible by 4
 			pFmt->endPoint = i.newEndPoint;
+
+			pFmt->frequency = 44100;
+			pFmt->bytesPerSec = 44100 * 2 * 2;
 
 			++pFmt;
 		}
